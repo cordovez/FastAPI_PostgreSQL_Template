@@ -8,18 +8,20 @@ load_dotenv()
 
 DB_URL = os.getenv("DB_URL")
 
-engine = create_engine(DB_URL)
-
-SessionLocal = sessionmaker(autoflush=False, bind=engine)
-
-DBBase = declarative_base()
+engine = create_engine(DB_URL, echo=True)
 
 
-def get_db():
-    db = SessionLocal()
+# SessionLocal = sessionmaker(autoflush=False, bind=engine)
 
-    try:
-        yield db
+#  this is SQLModel when using
+# DBBase = declarative_base()
 
-    finally:
-        db.close()
+
+# def get_db():
+#     db = SessionLocal()
+
+#     try:
+#         yield db
+
+#     finally:
+#         db.close()

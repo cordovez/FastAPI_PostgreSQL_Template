@@ -1,16 +1,22 @@
 import uvicorn
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
 
-from db.database import engine, DBBase
+from db.database import engine
 from routes.user_routes import user_router
-from routes.item_routes import item_router
+from sqlmodel import SQLModel
 
-app = FastAPI()
 
-DBBase.metadata.create_all(bind=engine)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    SQLModel.metadata.create_all(bind=engine)
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
+
 
 app.include_router(user_router, tags=["Users"], prefix="/users")
-app.include_router(item_router, tags=["Items"], prefix="/items")
 
 
 def main():
