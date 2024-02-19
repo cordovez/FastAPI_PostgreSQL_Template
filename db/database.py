@@ -1,6 +1,4 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm import declarative_base
+from sqlmodel import SQLModel, create_engine, Session
 from dotenv import load_dotenv
 import os
 
@@ -10,8 +8,6 @@ DB_URL = os.getenv("DB_URL")
 
 engine = create_engine(DB_URL, echo=True)
 
-
-# SessionLocal = sessionmaker(autoflush=False, bind=engine)
 
 #  this is SQLModel when using
 # DBBase = declarative_base()
