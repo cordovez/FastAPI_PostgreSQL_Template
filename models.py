@@ -10,10 +10,11 @@ class BookBase(SQLModel):
 
 class Book(BookBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    hashed_password: str = Field()
 
 
 class BookCreate(BookBase):
-    pass
+    password: str
 
 
 class BookRead(BookBase):
@@ -24,3 +25,4 @@ class BookUpdate(SQLModel):
     title: Optional[str] = None
     author: Optional[str] = None
     description: Optional[str] = None
+    password: Optional[str] = None
