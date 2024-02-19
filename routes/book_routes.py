@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, APIRouter, status, Query
 from db.database import engine
-from models import Book, BookUpdate
+from models import Book, BookUpdate, BookCreate, BookRead
 from sqlmodel import select, Session
 
 book_router = APIRouter()
@@ -8,13 +8,13 @@ book_router = APIRouter()
 session = Session(engine)
 
 
-@book_router.get("/", response_model=list[Book], status_code=status.HTTP_200_OK)
+@book_router.get("/", response_model=list[BookRead], status_code=status.HTTP_200_OK)
 async def get_all_books(offset: int = 0, limit: int = Query(default=100, le=100)):
     with session:
         return session.exec(select(Book).offset(offset).limit(limit)).all()
 
 
-@book_router.get("/{book_id}", response_model=Book, status_code=status.HTTP_200_OK)
+@book_router.get("/{book_id}", response_model=BookRead, status_code=status.HTTP_200_OK)
 async def get_one_book(book_id: int):
     with session:
         if book := session.get(Book, book_id):
@@ -23,8 +23,8 @@ async def get_one_book(book_id: int):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
 
-@book_router.post("/", response_model=Book, status_code=status.HTTP_201_CREATED)
-async def create_a_book(new_book: Book) -> Book:
+@book_router.post("/", response_model=BookRead, status_code=status.HTTP_201_CREATED)
+async def create_a_book(new_book: BookCreate):
     new_book = Book(
         author=new_book.author, title=new_book.title, description=new_book.description
     )
@@ -35,7 +35,7 @@ async def create_a_book(new_book: Book) -> Book:
         return new_book
 
 
-@book_router.patch("/{book_id}", response_model=Book)
+@book_router.patch("/{book_id}", response_model=BookRead)
 async def update_a_book(book_id: int, new_details: BookUpdate) -> Book:
     with session:
         db_book = session.get(Book, book_id)
