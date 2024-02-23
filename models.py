@@ -1,66 +1,8 @@
 from sqlmodel import SQLModel, Field, Relationship
-from typing import Optional
-from enum import Enum, auto, StrEnum
+from typing import Optional, List
+from enum import auto, StrEnum
 from sqlalchemy import Column, String
 from pydantic import BaseModel, EmailStr
-
-
-class BookBase(SQLModel):
-    title: str = Field(index=True)
-    author: str = Field(index=True)
-    description: str
-
-
-class Book(BookBase, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    hashed_password: str = Field()
-
-
-class BookCreate(BookBase):
-    password: str
-
-
-class BookRead(BookBase):
-    id: int
-
-
-class BookUpdate(BookCreate):
-    title: Optional[str] = None
-    author: Optional[str] = None
-    description: Optional[str] = None
-    password: Optional[str] = None
-    editor: Optional[str] = None
-    isbn: Optional[str] = None
-    language: Optional[str] = None
-
-
-class TeamBase(SQLModel):
-    name: str = Field(index=True)
-    headquarters: str
-
-
-"""
-TEAMS
-"""
-
-
-class Team(TeamBase, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-
-    heroes: list["Hero"] = Relationship(back_populates="team")
-
-
-class TeamCreate(TeamBase):
-    pass
-
-
-class TeamRead(TeamBase):
-    id: int
-
-
-class TeamUpdate(SQLModel):
-    name: Optional[str] = None
-    headquarters: Optional[str] = None
 
 
 """
@@ -76,6 +18,31 @@ class Role(StrEnum):
     STAFF = auto()
 
 
+class Subject(StrEnum):
+    FRENCH = auto()
+    GERMAN = auto()
+    ITALIAN = auto()
+    ENGLISH = auto()
+    SPANISH = auto()
+
+
+class CourseBase(SQLModel):
+    course_name: str = Field(default=None, index=True, unique=True)
+
+
+class CourseDB(CourseBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+
+class CourseRead(CourseBase):
+    id: int
+    course_name: str
+
+
+class CourseCreate(CourseBase):
+    course_name: Optional[str]
+
+
 class PersonBase(SQLModel):
     username: str = Field(index=True)
     email: str = Field(index=True)
@@ -89,6 +56,7 @@ class PersonBase(SQLModel):
     post_code: Optional[str] = Field(default=None)
     locality: Optional[str] = Field(default=None)
     country: Optional[str] = Field(default=None)
+    course: Optional[str] = Field(default=None, foreign_key="coursedb.course_name")
 
 
 class PersonDB(PersonBase, table=True):
@@ -121,14 +89,32 @@ class PersonUpdate(SQLModel):
     country: Optional[str] = None
 
 
-class Login(SQLModel):
-    username: str
-    password: str
+class PersonCourseUpdate(SQLModel):
+    course: str
 
 
-"""
-Heroes
-"""
+class TeamBase(SQLModel):
+    name: str = Field(index=True)
+    headquarters: str
+
+
+class Team(TeamBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+    heroes: List["Hero"] = Relationship(back_populates="team")
+
+
+class TeamCreate(TeamBase):
+    pass
+
+
+class TeamRead(TeamBase):
+    id: int
+
+
+class TeamUpdate(SQLModel):
+    name: Optional[str] = None
+    headquarters: Optional[str] = None
 
 
 class HeroBase(SQLModel):

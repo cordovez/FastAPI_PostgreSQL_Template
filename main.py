@@ -4,9 +4,10 @@ from contextlib import asynccontextmanager
 
 from db.database import engine
 from routes.user_routes import user_router
-from routes.book_routes import book_router
+from routes.course_routes import course_router
 from sqlmodel import SQLModel
-import models
+
+# import models
 
 
 @asynccontextmanager
@@ -19,7 +20,7 @@ app = FastAPI(lifespan=lifespan)
 
 
 app.include_router(user_router, tags=["Users"], prefix="/users")
-app.include_router(book_router, tags=["Books"], prefix="/books")
+app.include_router(course_router, tags=["Courses"], prefix="/courses")
 
 
 def main():

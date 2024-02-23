@@ -1,6 +1,14 @@
 from fastapi import Depends, HTTPException, APIRouter, status, Query
 from db.database import engine
-from models import PersonCreate, PersonRead, PersonUpdate, PersonDB, Role
+from models import (
+    PersonCreate,
+    PersonRead,
+    PersonUpdate,
+    PersonDB,
+    Role,
+    PersonCourseUpdate,
+    Subject,
+)
 from sqlmodel import select, Session
 
 user_router = APIRouter()
@@ -44,6 +52,22 @@ async def get_users_by_role(
     # return role
     return session.exec(
         select(PersonDB).where(PersonDB.role == role).offset(offset).limit(limit)
+    )
+
+
+@user_router.get(
+    "/by-course", response_model=list[PersonRead], status_code=status.HTTP_200_OK
+)
+async def get_users_by_role(
+    *,
+    session: Session = Depends(get_session),
+    course: Subject,
+    offset: int = 0,
+    limit: int = Query(default=100, le=100),
+):
+    # return role
+    return session.exec(
+        select(PersonDB).where(PersonDB.course == course).offset(offset).limit(limit)
     )
 
 
@@ -104,6 +128,28 @@ async def update_a_user(
     if "username" in update_data:
         lowercased = update_data["username"].lower()
         extra_data["username"] = lowercased
+
+    db_person.sqlmodel_update(update_data, update=extra_data)
+    session.add(db_person)
+    session.commit()
+    session.refresh(db_person)
+    return db_person
+
+
+@user_router.patch("/add_course/{person_id}", response_model=PersonRead)
+async def update_a_course(
+    *,
+    session: Session = Depends(get_session),
+    person_id: int,
+    update_data: PersonCourseUpdate,
+    course: Subject,
+):
+    db_person = session.get(PersonDB, person_id)
+    if not db_person:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    update_data = update_data.model_dump(exclude_unset=True)
+    extra_data = {"course": course}
 
     db_person.sqlmodel_update(update_data, update=extra_data)
     session.add(db_person)
