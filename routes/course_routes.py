@@ -9,6 +9,7 @@ from models import (
     CourseRead,
     CourseCreate,
     CourseDB,
+    CourseUpdate,
     Subject,
 )
 from sqlmodel import select, Session
@@ -22,27 +23,27 @@ def get_session():
 
 
 @course_router.get(
-    "/all", response_model=list[PersonRead], status_code=status.HTTP_200_OK
+    "/all", response_model=list[CourseRead], status_code=status.HTTP_200_OK
 )
-async def get_all_users(
+async def get_all_courses(
     *,
     session: Session = Depends(get_session),
     offset: int = 0,
     limit: int = Query(default=100, le=100),
 ):
-    return session.exec(select(PersonDB).offset(offset).limit(limit)).all()
+    return session.exec(select(CourseDB).offset(offset).limit(limit)).all()
 
 
 @course_router.get(
-    "/{person_id}", response_model=PersonRead, status_code=status.HTTP_200_OK
+    "/{course_id}", response_model=CourseRead, status_code=status.HTTP_200_OK
 )
 async def get_one_user(
     *,
     session: Session = Depends(get_session),
-    person_id: int,
+    course_id: int,
 ):
-    if person := session.get(PersonDB, person_id):
-        return person
+    if course := session.get(CourseDB, course_id):
+        return course
     else:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
@@ -54,6 +55,9 @@ async def create_a_course(
     new_course: CourseCreate,
     subject: Subject,
 ):
+    """
+    Courses are created from the values of the Enum passed as "subject". The body of the post request is for future possible fields
+    """
     extra_data = {"course_name": subject}
     cousedb = CourseDB.model_validate(new_course, update=extra_data)
     session.add(cousedb)
@@ -62,37 +66,31 @@ async def create_a_course(
     return cousedb
 
 
-@course_router.patch("/update/{person_id}", response_model=PersonRead)
-async def update_a_user(
+@course_router.patch("/update/{course_id}", response_model=CourseRead)
+async def update_a_course(
     *,
     session: Session = Depends(get_session),
-    person_id: int,
-    new_details: PersonUpdate,
+    course_id: int,
+    new_details: CourseUpdate,
 ):
-    db_person = session.get(PersonDB, person_id)
-    if not db_person:
+    """
+    The update path is intended for other fields that may be created eventually, whereas the 'course_name' should probably remain a value from an enum.
+    """
+    db_course = session.get(CourseDB, course_id)
+    if not db_course:
         raise HTTPException(status_code=404, detail="Book not found")
 
     update_data = new_details.model_dump(exclude_unset=True)
-    extra_data = {}
-    if "password" in update_data:
-        password = update_data["password"]
-        hashed_password = hash_password(password)
-        extra_data["hashed_password"] = hashed_password
 
-    if "username" in update_data:
-        lowercased = update_data["username"].lower()
-        extra_data["username"] = lowercased
-
-    db_person.sqlmodel_update(update_data, update=extra_data)
-    session.add(db_person)
+    db_course.sqlmodel_update(update_data)
+    session.add(db_course)
     session.commit()
-    session.refresh(db_person)
-    return db_person
+    session.refresh(db_course)
+    return db_course
 
 
 @course_router.delete("/delete/{course_id}")
-async def delete_user(
+async def delete_course(
     *,
     session: Session = Depends(get_session),
     course_id: int,

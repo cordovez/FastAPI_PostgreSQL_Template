@@ -43,6 +43,10 @@ class CourseCreate(CourseBase):
     course_name: Optional[str]
 
 
+class CourseUpdate(CourseBase):
+    course_name: Optional[str]
+
+
 class PersonBase(SQLModel):
     username: str = Field(index=True)
     email: str = Field(index=True)

@@ -5,9 +5,11 @@ from models import (
     PersonRead,
     PersonUpdate,
     PersonDB,
+    PersonBase,
     Role,
     PersonCourseUpdate,
     Subject,
+    CourseDB,
 )
 from sqlmodel import select, Session
 
@@ -55,20 +57,31 @@ async def get_users_by_role(
     )
 
 
-@user_router.get(
-    "/by-course", response_model=list[PersonRead], status_code=status.HTTP_200_OK
-)
-async def get_users_by_role(
+@user_router.get("/by-course", status_code=status.HTTP_200_OK)
+async def get_students_by_course(
     *,
     session: Session = Depends(get_session),
     course: Subject,
     offset: int = 0,
     limit: int = Query(default=100, le=100),
 ):
-    # return role
-    return session.exec(
-        select(PersonDB).where(PersonDB.course == course).offset(offset).limit(limit)
+    result = session.exec(
+        select(PersonDB, CourseDB)
+        .join(
+            CourseDB,
+        )
+        .where(CourseDB.course_name == course)
+        .offset(offset)
+        .limit(limit)
     )
+    students = []
+    for person, course in result:
+        if not course:
+            students.append({"student": person.last_name, "course": "not enrolled"})
+        else:
+            students.append({"student": person.last_name, "course": course.course_name})
+
+    return students
 
 
 @user_router.get(
