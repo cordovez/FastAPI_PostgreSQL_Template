@@ -150,7 +150,7 @@ async def update_a_user(
 
 
 @user_router.patch("/add_course/{person_id}", response_model=PersonRead)
-async def update_a_course(
+async def assign_course(
     *,
     session: Session = Depends(get_session),
     person_id: int,
