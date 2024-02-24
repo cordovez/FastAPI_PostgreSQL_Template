@@ -1,13 +1,9 @@
-from sqlmodel import SQLModel, Field, Relationship
-from typing import Optional, List
+from sqlmodel import SQLModel, Field
+from typing import Optional
 from enum import auto, StrEnum
-from sqlalchemy import Column, String
-from pydantic import BaseModel, EmailStr
 
-
-"""
-Persons
-"""
+from pydantic import EmailStr
+from datetime import date
 
 
 class Role(StrEnum):
@@ -26,8 +22,40 @@ class Subject(StrEnum):
     SPANISH = auto()
 
 
+"""
+Courses
+
+"""
+
+
+class EnrollmentBase(SQLModel):
+    student_id: int = Field(foreign_key="persondb.id")
+    course_id: int = Field(foreign_key="coursedb.id")
+    enrollment_date: Optional[date]
+
+
+class EnrollmentDB(EnrollmentBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+
+class EnrollmentCreate(EnrollmentBase):
+    pass
+
+
+class EnrollmentRead(EnrollmentBase):
+    pass
+
+
+"""
+Courses
+
+"""
+
+
 class CourseBase(SQLModel):
     course_name: str = Field(default=None, index=True, unique=True)
+    description: Optional[str] = Field(default=None)
+    instructor_id: Optional[int] = Field(default=None, foreign_key="persondb.id")
 
 
 class CourseDB(CourseBase, table=True):
@@ -40,15 +68,21 @@ class CourseRead(CourseBase):
 
 
 class CourseCreate(CourseBase):
-    course_name: Optional[str]
+    pass
 
 
 class CourseUpdate(CourseBase):
-    course_name: Optional[str]
+    pass
+
+
+"""
+Persons
+
+"""
 
 
 class PersonBase(SQLModel):
-    username: str = Field(index=True)
+    username: str = Field(index=True, unique=True)
     email: str = Field(index=True)
     first_name: str
     middle_name: Optional[str] = Field(default=None)
@@ -95,56 +129,3 @@ class PersonUpdate(SQLModel):
 
 class PersonCourseUpdate(SQLModel):
     course: str
-
-
-class TeamBase(SQLModel):
-    name: str = Field(index=True)
-    headquarters: str
-
-
-class Team(TeamBase, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-
-    heroes: List["Hero"] = Relationship(back_populates="team")
-
-
-class TeamCreate(TeamBase):
-    pass
-
-
-class TeamRead(TeamBase):
-    id: int
-
-
-class TeamUpdate(SQLModel):
-    name: Optional[str] = None
-    headquarters: Optional[str] = None
-
-
-class HeroBase(SQLModel):
-    name: str = Field(index=True)
-    secret_name: str
-    age: Optional[int] = Field(default=None, index=True)
-
-    team_id: Optional[int] = Field(default=None, foreign_key="team.id")
-
-
-class Hero(HeroBase, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-
-    team: Optional[Team] = Relationship(back_populates="heroes")
-
-
-class HeroRead(HeroBase):
-    id: int
-
-
-class HeroCreate(HeroBase):
-    pass
-
-
-class HeroUpdate(SQLModel):
-    name: Optional[str] = None
-    secret_name: Optional[str] = None
-    age: Optional[int] = None
-    team_id: Optional[int] = None

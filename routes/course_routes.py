@@ -81,6 +81,7 @@ async def update_a_course(
         raise HTTPException(status_code=404, detail="Book not found")
 
     update_data = new_details.model_dump(exclude_unset=True)
+    update_data["course_name"] = db_course.course_name
 
     db_course.sqlmodel_update(update_data)
     session.add(db_course)
