@@ -1,73 +1,63 @@
 import requests
-import json
-from models import PersonDB, Role
+from models import PersonDB, Role, Subject, CourseDB
 from db.database import engine
 from sqlmodel import Session
 
 
 def get_users_data():
-    response = requests.get("https://dummyjson.com/users")
+    response = requests.get("https://dummyjson.com/users?limit=100")
     data = response.json()
     return data["users"]
 
 
-def create_teachers():
-    users = get_users_data()
-    teachers = [teacher for teacher in users if teacher["id"] < 11]
+def assign_role_based_on_id(user_id):
+    match user_id:
+        case user_id if user_id < 11:
+            return Role.STUDENT
+        case user_id if 11 <= user_id < 21:
+            return Role.INSTRUCTOR
+        case user_id if 21 <= user_id < 31:
+            return Role.STAFF
+        case user_id if 31 <= user_id < 41:
+            return Role.TECH_ADMIN
+        case user_id if 41 <= user_id < 51:
+            return Role.ACADEMIC_ADMIN
+        case _:
+            return "not assigned"
+
+
+def create_fake_users():
+    fake_data = get_users_data()
     with Session(engine) as session:
-        for teacher in teachers:
-            new_teacher = PersonDB(
-                email=teacher["email"],
-                first_name=teacher["firstName"],
-                last_name=teacher["lastName"],
-                username=teacher["username"],
-                role=Role.INSTRUCTOR,
-            )
-            session.add(new_teacher)
-            session.commit()
-            session.refresh(new_teacher)
+        for user in fake_data:
+            if user["id"] < 52:
+                new_user = PersonDB(
+                    email=user["email"],
+                    first_name=user["firstName"],
+                    last_name=user["lastName"],
+                    username=user["username"],
+                    role=assign_role_based_on_id(user["id"]),
+                    street_address=user["address"].get("address", None),
+                    locality=user["address"].get("city", None),
+                    post_code=user["address"].get("postalCode", None),
+                    country="United States of America",
+                    password_hashed=user["password"],
+                )
+
+                session.add(new_user)
+                session.commit()
+                session.refresh(new_user)
 
 
-def create_students():
-    users = get_users_data()
-    students = [student for student in users if student["id"] in range(11, 21)]
-
+def create_fake_courses():
     with Session(engine) as session:
-        for student in students:
-            new_student = PersonDB(
-                email=student["email"],
-                first_name=student["firstName"],
-                last_name=student["lastName"],
-                username=student["username"],
-                role=Role.STUDENT,
-            )
-            session.add(new_student)
+        for language in list(Subject):
+            new_course = CourseDB(course_name=language.value)
+            session.add(new_course)
             session.commit()
-            session.refresh(new_student)
+            session.refresh(new_course)
 
 
-def create_staffers():
-    users = get_users_data()
-    staffers = [staff for staff in users if staff["id"] in range(22, 32)]
-    with Session(engine) as session:
-        for staff in staffers:
-            new_staff = PersonDB(
-                email=staff["email"],
-                first_name=staff["firstName"],
-                last_name=staff["lastName"],
-                username=staff["username"],
-                role=Role.STAFF,
-            )
-            session.add(new_staff)
-            session.commit()
-            session.refresh(new_staff)
-
-
-def create_fake_db_data():
-    create_staffers()
-    create_students()
-    create_teachers()
-
-
-# if __name__ == "__main__":
-#     print(create_teachers())
+if __name__ == "__main__":
+    create_fake_users()
+    create_fake_courses()

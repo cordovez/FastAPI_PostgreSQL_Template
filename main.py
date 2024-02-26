@@ -7,13 +7,11 @@ from routes.user_routes import user_router
 from routes.course_routes import course_router
 from routes.enrollment_routes import enrollment_router
 from sqlmodel import SQLModel
-from fake_data import create_fake_db_data
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     SQLModel.metadata.create_all(engine)
-    create_fake_db_data()
     yield
 
 

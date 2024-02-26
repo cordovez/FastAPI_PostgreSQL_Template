@@ -22,6 +22,21 @@ class Subject(StrEnum):
     SPANISH = auto()
 
 
+class Delivery(StrEnum):
+    FACE_TO_FACE_ON_PREMISES = "face-to-face at academy"
+    FACE_TO_FACE_MY_PLACE = "face-to-face my place"
+    DISTANCE_LEARNING = "distance learning"
+
+
+class Levels(StrEnum):
+    A1 = auto()
+    A2 = auto()
+    B1 = auto()
+    B2 = auto()
+    C1 = auto()
+    C2 = auto()
+
+
 """
 Courses
 
@@ -29,9 +44,15 @@ Courses
 
 
 class EnrollmentBase(SQLModel):
-    student_id: int = Field(foreign_key="persondb.id")
     course_id: int = Field(foreign_key="coursedb.id")
-    enrollment_date: Optional[date]
+    student_id: int = Field(foreign_key="persondb.id")
+    instructor_id: int = Field(foreign_key="coursedb.id")
+    start_level: Levels = Field(default=Levels.A1)
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    week_days: Optional[str] = None
+    time_start: Optional[str] = None
+    time_end: Optional[str] = None
 
 
 class EnrollmentDB(EnrollmentBase, table=True):

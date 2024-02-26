@@ -29,9 +29,7 @@ def hash_password(password: str) -> str:
     return f"faked {password} goes here"
 
 
-@user_router.get(
-    "/all", response_model=list[PersonRead], status_code=status.HTTP_200_OK
-)
+@user_router.get("/", response_model=list[PersonRead], status_code=status.HTTP_200_OK)
 async def get_all_users(
     *,
     session: Session = Depends(get_session),
@@ -98,9 +96,7 @@ async def get_one_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
 
-@user_router.post(
-    "/add", response_model=PersonRead, status_code=status.HTTP_201_CREATED
-)
+@user_router.post("/", response_model=PersonRead, status_code=status.HTTP_201_CREATED)
 async def create_a_user(
     *, session: Session = Depends(get_session), new_person: PersonCreate, role: Role
 ):
@@ -120,7 +116,7 @@ async def create_a_user(
     return db_person
 
 
-@user_router.patch("/update/{person_id}", response_model=PersonRead)
+@user_router.patch("/{person_id}", response_model=PersonRead)
 async def update_a_user(
     *,
     session: Session = Depends(get_session),
@@ -149,7 +145,7 @@ async def update_a_user(
     return db_person
 
 
-@user_router.patch("/add_course/{person_id}", response_model=PersonRead)
+@user_router.patch("/{person_id}/courses", response_model=PersonRead)
 async def assign_course(
     *,
     session: Session = Depends(get_session),
