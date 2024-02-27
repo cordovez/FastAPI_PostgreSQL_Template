@@ -22,9 +22,7 @@ def get_session():
         yield session
 
 
-@course_router.get(
-    "/all", response_model=list[CourseRead], status_code=status.HTTP_200_OK
-)
+@course_router.get("/", response_model=list[CourseRead], status_code=status.HTTP_200_OK)
 async def get_all_courses(
     *,
     session: Session = Depends(get_session),
@@ -32,6 +30,22 @@ async def get_all_courses(
     limit: int = Query(default=100, le=100),
 ):
     return session.exec(select(CourseDB).offset(offset).limit(limit)).all()
+
+
+@course_router.post("/", status_code=status.HTTP_201_CREATED)
+async def create_a_course(
+    *,
+    session: Session = Depends(get_session),
+    new_course: CourseCreate,
+):
+    """
+    Courses are created from the values of the Enum passed as "subject". The body of the post request is for future possible fields
+    """
+    cousedb = CourseDB.model_validate(new_course)
+    session.add(cousedb)
+    session.commit()
+    session.refresh(cousedb)
+    return cousedb
 
 
 @course_router.get(
@@ -48,25 +62,7 @@ async def get_one_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
 
-@course_router.post("/add", status_code=status.HTTP_201_CREATED)
-async def create_a_course(
-    *,
-    session: Session = Depends(get_session),
-    new_course: CourseCreate,
-    subject: Subject,
-):
-    """
-    Courses are created from the values of the Enum passed as "subject". The body of the post request is for future possible fields
-    """
-    extra_data = {"course_name": subject}
-    cousedb = CourseDB.model_validate(new_course, update=extra_data)
-    session.add(cousedb)
-    session.commit()
-    session.refresh(cousedb)
-    return cousedb
-
-
-@course_router.patch("/update/{course_id}", response_model=CourseRead)
+@course_router.patch("/{course_id}", response_model=CourseRead)
 async def update_a_course(
     *,
     session: Session = Depends(get_session),
@@ -90,7 +86,11 @@ async def update_a_course(
     return db_course
 
 
-@course_router.delete("/delete/{course_id}")
+@course_router.delete(
+    "/{course_id}",
+    response_model=bool,
+    response_description='"true" if successful',
+)
 async def delete_course(
     *,
     session: Session = Depends(get_session),
@@ -101,4 +101,4 @@ async def delete_course(
         raise HTTPException(status_code=404, detail="Course not found")
     session.delete(course)
     session.commit()
-    return {"deleted": True}
+    return True

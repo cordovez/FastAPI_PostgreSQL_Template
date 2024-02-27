@@ -64,7 +64,14 @@ class EnrollmentCreate(EnrollmentBase):
 
 
 class EnrollmentRead(EnrollmentBase):
-    pass
+    id: int
+
+
+class EnrollmentUpdate(EnrollmentBase):
+    course_id: Optional[int] = None
+    student_id: Optional[int] = None
+    instructor_id: Optional[int] = None
+    start_level: Optional[Levels] = None
 
 
 """
@@ -108,7 +115,6 @@ class PersonBase(SQLModel):
     first_name: str
     middle_name: Optional[str] = Field(default=None)
     last_name: str = Field(index=True)
-    role: str
     primary_contact: Optional[str] = Field(default=None)
     secondary_contact: Optional[str] = Field(default=None)
     street_address: Optional[str] = Field(default=None)
@@ -121,10 +127,12 @@ class PersonBase(SQLModel):
 class PersonDB(PersonBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     password_hashed: Optional[str] = Field(default=None)
+    role: str = Field(default=Role.STUDENT)
 
 
 class PersonRead(PersonBase):
     id: int
+    role: Role
 
 
 class PersonCreate(SQLModel):
@@ -134,19 +142,12 @@ class PersonCreate(SQLModel):
     password: str
 
 
-class PersonUpdate(SQLModel):
+class PersonUpdate(PersonBase):
     username: Optional[str] = None
     email: Optional[str] = None
     first_name: Optional[str] = None
-    middle_name: Optional[str] = None
     last_name: Optional[str] = None
-    primary_contact: Optional[str] = None
-    secondary_contact: Optional[str] = None
-    street_address: Optional[str] = None
-    post_code: Optional[str] = None
-    locality: Optional[str] = None
-    country: Optional[str] = None
 
 
-class PersonCourseUpdate(SQLModel):
-    course: str
+class PersonUpdateRole(SQLModel):
+    role: Role = Field(default=Role.STUDENT)

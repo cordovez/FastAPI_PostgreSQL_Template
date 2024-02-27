@@ -5,11 +5,8 @@ from models import (
     PersonRead,
     PersonUpdate,
     PersonDB,
-    PersonBase,
+    PersonUpdateRole,
     Role,
-    PersonCourseUpdate,
-    Subject,
-    CourseDB,
 )
 from sqlmodel import select, Session
 
@@ -39,6 +36,27 @@ async def get_all_users(
     return session.exec(select(PersonDB).offset(offset).limit(limit)).all()
 
 
+@user_router.post("/", response_model=PersonRead, status_code=status.HTTP_201_CREATED)
+async def create_a_user(
+    *,
+    session: Session = Depends(get_session),
+    new_person: PersonCreate,
+):
+    hashed_password = hash_password(new_person.password)
+
+    extra_data = {
+        "password_hashed": hashed_password,
+        "username": create_default_username(
+            new_person.first_name, new_person.last_name
+        ),
+    }
+    db_person = PersonDB.model_validate(new_person, update=extra_data)
+    session.add(db_person)
+    session.commit()
+    session.refresh(db_person)
+    return db_person
+
+
 @user_router.get(
     "/by-role", response_model=list[PersonRead], status_code=status.HTTP_200_OK
 )
@@ -55,33 +73,6 @@ async def get_users_by_role(
     )
 
 
-@user_router.get("/by-course", status_code=status.HTTP_200_OK)
-async def get_students_by_course(
-    *,
-    session: Session = Depends(get_session),
-    course: Subject,
-    offset: int = 0,
-    limit: int = Query(default=100, le=100),
-):
-    result = session.exec(
-        select(PersonDB, CourseDB)
-        .join(
-            CourseDB,
-        )
-        .where(CourseDB.course_name == course)
-        .offset(offset)
-        .limit(limit)
-    )
-    students = []
-    for person, course in result:
-        if not course:
-            students.append({"student": person.last_name, "course": "not enrolled"})
-        else:
-            students.append({"student": person.last_name, "course": course.course_name})
-
-    return students
-
-
 @user_router.get(
     "/{person_id}", response_model=PersonRead, status_code=status.HTTP_200_OK
 )
@@ -96,26 +87,6 @@ async def get_one_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
 
-@user_router.post("/", response_model=PersonRead, status_code=status.HTTP_201_CREATED)
-async def create_a_user(
-    *, session: Session = Depends(get_session), new_person: PersonCreate, role: Role
-):
-    hashed_password = hash_password(new_person.password)
-
-    extra_data = {
-        "password_hashed": hashed_password,
-        "role": role,
-        "username": create_default_username(
-            new_person.first_name, new_person.last_name
-        ),
-    }
-    db_person = PersonDB.model_validate(new_person, update=extra_data)
-    session.add(db_person)
-    session.commit()
-    session.refresh(db_person)
-    return db_person
-
-
 @user_router.patch("/{person_id}", response_model=PersonRead)
 async def update_a_user(
     *,
@@ -125,7 +96,7 @@ async def update_a_user(
 ):
     db_person = session.get(PersonDB, person_id)
     if not db_person:
-        raise HTTPException(status_code=404, detail="Book not found")
+        raise HTTPException(status_code=404, detail="Person not found")
 
     update_data = new_details.model_dump(exclude_unset=True)
     extra_data = {}
@@ -145,29 +116,34 @@ async def update_a_user(
     return db_person
 
 
-@user_router.patch("/{person_id}/courses", response_model=PersonRead)
-async def assign_course(
+@user_router.patch("/{person_id}/role", response_model=PersonRead)
+async def change_role(
     *,
     session: Session = Depends(get_session),
     person_id: int,
-    update_data: PersonCourseUpdate,
-    course: Subject,
+    new_details: PersonUpdateRole,
 ):
+    """
+    This route is different from regular update, in that it would be accessible only to TECH_ADMIN to change a user's status,
+    """
     db_person = session.get(PersonDB, person_id)
     if not db_person:
-        raise HTTPException(status_code=404, detail="Book not found")
+        raise HTTPException(status_code=404, detail="Person not found")
 
-    update_data = update_data.model_dump(exclude_unset=True)
-    extra_data = {"course": course}
+    update_data = new_details.model_dump(exclude_unset=True)
 
-    db_person.sqlmodel_update(update_data, update=extra_data)
+    db_person.sqlmodel_update(update_data)
     session.add(db_person)
     session.commit()
     session.refresh(db_person)
     return db_person
 
 
-@user_router.delete("/delete/{person_id}")
+@user_router.delete(
+    "/{person_id}",
+    response_model=bool,
+    response_description='"true" if successful',
+)
 async def delete_user(
     *,
     session: Session = Depends(get_session),
@@ -178,4 +154,4 @@ async def delete_user(
         raise HTTPException(status_code=404, detail="Person not found")
     session.delete(person)
     session.commit()
-    return {"deleted": True}
+    return True
