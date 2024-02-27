@@ -1,10 +1,8 @@
-from fastapi import Depends, HTTPException, APIRouter, status, Query, Body
+from fastapi import Depends, HTTPException, APIRouter, status, Query
 from db.database import engine
 from models import EnrollmentCreate, EnrollmentDB, EnrollmentRead, EnrollmentUpdate
 from sqlmodel import select, Session
 from datetime import date
-from typing import Annotated
-from pydantic import BaseModel
 
 enrollment_router = APIRouter()
 
@@ -48,13 +46,15 @@ async def get_student_enrollment(
     session: Session = Depends(get_session),
     student_id: int,
 ):
-    if db_enrollment := session.exec(
-        select(EnrollmentDB).where(EnrollmentDB.student_id == student_id)
+    if not (
+        db_enrollment := session.exec(
+            select(EnrollmentDB).where(EnrollmentDB.student_id == student_id)
+        )
     ):
-        for student in db_enrollment:
-            return student
-    else:
         raise HTTPException(status_code=404, detail="Student not found")
+
+    for student in db_enrollment:
+        return student
 
 
 @enrollment_router.patch("/{enrollment_id}", response_model=EnrollmentRead)

@@ -1,16 +1,10 @@
 from fastapi import Depends, HTTPException, APIRouter, status, Query
 from db.database import engine
 from models import (
-    PersonCreate,
-    PersonRead,
-    PersonUpdate,
-    PersonDB,
-    Role,
     CourseRead,
     CourseCreate,
     CourseDB,
     CourseUpdate,
-    Subject,
 )
 from sqlmodel import select, Session
 
@@ -38,9 +32,7 @@ async def create_a_course(
     session: Session = Depends(get_session),
     new_course: CourseCreate,
 ):
-    """
-    Courses are created from the values of the Enum passed as "subject". The body of the post request is for future possible fields
-    """
+
     cousedb = CourseDB.model_validate(new_course)
     session.add(cousedb)
     session.commit()
@@ -69,9 +61,7 @@ async def update_a_course(
     course_id: int,
     new_details: CourseUpdate,
 ):
-    """
-    The update path is intended for other fields that may be created eventually, whereas the 'course_name' should probably remain a value from an enum.
-    """
+
     db_course = session.get(CourseDB, course_id)
     if not db_course:
         raise HTTPException(status_code=404, detail="Book not found")

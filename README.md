@@ -1,6 +1,7 @@
 # FastAPI_PostgreSQL_Template
 ⚠️ ... Attention: As of 27 Feb 2024 this is a work in progress ... ⚠️
-This is a boilerplate template for scaffolding backend APIs using Postgres/Relational databases.
+
+This is a boilerplate template for scaffolding backend APIs using SQL databases.
 
 It is intended to be a learning tool for beginners (like myself), who wish to explore how to handle and work with relationships between rows in tables.
 
@@ -18,4 +19,6 @@ and likewise be able to handle enrollment in these courses.
 
 A calendar view would be the cherry on the cake!
 
- 
+## Using this template
+⚠️ ... Attention: As of 27 Feb 2024 this is a work in progress ... ⚠️
+
