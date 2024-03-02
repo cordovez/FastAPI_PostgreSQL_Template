@@ -3,6 +3,7 @@ from db.database import engine
 from models import EnrollmentCreate, EnrollmentDB, EnrollmentRead, EnrollmentUpdate
 from sqlmodel import select, Session
 from datetime import date
+from handlers.student_enrollment import enroll_student
 
 enrollment_router = APIRouter()
 
@@ -28,16 +29,12 @@ async def get_all_enrollments(
 @enrollment_router.post(
     "/", response_model=EnrollmentRead, status_code=status.HTTP_201_CREATED
 )
-async def enroll_student(
+async def process_enrollment(
     *,
     session: Session = Depends(get_session),
     new_enrollment: EnrollmentCreate,
 ):
-    db_enrollment = EnrollmentDB.model_validate(new_enrollment)
-    session.add(db_enrollment)
-    session.commit()
-    session.refresh(db_enrollment)
-    return db_enrollment
+    return await enroll_student(session, new_enrollment)
 
 
 @enrollment_router.get("/{student_id}/", response_model=EnrollmentRead)

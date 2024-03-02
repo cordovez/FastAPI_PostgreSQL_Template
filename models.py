@@ -1,7 +1,6 @@
-from sqlmodel import SQLModel, Field
-from typing import Optional
+from sqlmodel import SQLModel, Field, Relationship
+from typing import Optional, List
 from enum import auto, StrEnum
-
 from pydantic import EmailStr
 from datetime import date
 
@@ -83,11 +82,14 @@ Courses
 class CourseBase(SQLModel):
     course_name: str = Field(default=None, index=True, unique=True)
     description: Optional[str] = Field(default=None)
-    instructor_id: Optional[int] = Field(default=None, foreign_key="persondb.id")
 
 
 class CourseDB(CourseBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+
+    students: List["PersonDB"] = Relationship(
+        back_populates="course",
+    )
 
 
 class CourseRead(CourseBase):
@@ -121,13 +123,15 @@ class PersonBase(SQLModel):
     post_code: Optional[str] = Field(default=None)
     locality: Optional[str] = Field(default=None)
     country: Optional[str] = Field(default=None)
-    course: Optional[str] = Field(default=None, foreign_key="coursedb.course_name")
+    course_id: Optional[int] = Field(default=None, foreign_key="coursedb.id")
 
 
 class PersonDB(PersonBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     password_hashed: Optional[str] = Field(default=None)
     role: str = Field(default=Role.STUDENT)
+
+    course: Optional[CourseDB] = Relationship(back_populates="students")
 
 
 class PersonRead(PersonBase):

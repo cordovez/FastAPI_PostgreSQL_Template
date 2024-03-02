@@ -58,5 +58,7 @@ def create_fake_courses():
             session.refresh(new_course)
 
 
-create_fake_users()
-create_fake_courses()
+if __name__ == "__main__":
+
+    create_fake_users()
+    create_fake_courses()

@@ -26,6 +26,20 @@ async def get_all_courses(
     return session.exec(select(CourseDB).offset(offset).limit(limit)).all()
 
 
+@course_router.get("/{course_id}/students")
+async def list_students_by_course(
+    *,
+    course_id: int,
+    session: Session = Depends(get_session),
+    offset: int = 0,
+    limit: int = Query(default=100, le=100),
+):
+
+    coursedb = session.get(CourseDB, course_id)
+
+    return coursedb.students
+
+
 @course_router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_a_course(
     *,
