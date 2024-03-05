@@ -1,7 +1,19 @@
 import requests
-from models import PersonDB, Role, Subject, CourseDB
+from models import (
+    PersonDB,
+    Role,
+    Subject,
+    CourseDB,
+    EnrollmentCreate,
+    EnrollmentDB,
+    StudentDB,
+    PersonCreate,
+    StudentEnrollment,
+    Levels,
+)
 from db.database import engine
-from sqlmodel import Session
+from sqlmodel import Session, select
+import random
 
 
 def get_users_data():
@@ -28,6 +40,7 @@ def assign_role_based_on_id(user_id):
 
 def create_fake_users():
     fake_data = get_users_data()
+    list_of_users = []
     with Session(engine) as session:
         for user in fake_data:
             if user["id"] < 52:
@@ -48,6 +61,9 @@ def create_fake_users():
                 session.commit()
                 session.refresh(new_user)
 
+                list_of_users.append(new_user)
+    return list_of_users
+
 
 def create_fake_courses():
     with Session(engine) as session:
@@ -58,7 +74,71 @@ def create_fake_courses():
             session.refresh(new_course)
 
 
-if __name__ == "__main__":
+def create_fake_students():
+    with Session(engine) as session:
+        users = session.exec(select(PersonDB)).all()
+        for user in users:
+            if user.role == "student":
+                new_student = StudentDB(
+                    username=user.username,
+                    email=user.email,
+                    first_name=user.first_name,
+                    last_name=user.last_name,
+                )
+                session.add(new_student)
+                session.commit()
+                session.refresh(new_student)
 
+
+def select_a_course():
+    with Session(engine) as session:
+        courses = session.exec(select(CourseDB)).all()
+        return random.choice(courses)
+
+
+def create_fake_enrollments():
+    with Session(engine) as session:
+        students = session.exec(select(StudentDB)).all()
+        for student in students:
+            random_course = select_a_course()
+            new_enrollment = EnrollmentDB(
+                student_id=student.id,
+                course_id=random_course.id,
+                course_name=random_course.course_name,
+                instructor_id=random.choice(list(range(11, 21))),
+                start_level=random.choice(["a1", "a2", "b1", "b2", "c1", "c2"]),
+            )
+
+            student.sqlmodel_update({"enrollments": [new_enrollment.id]})
+
+            session.add(student)
+            session.add(new_enrollment)
+            session.commit()
+            session.refresh(student)
+            session.refresh(new_enrollment)
+
+
+def create_join_of_fake_data():
+    with Session(engine) as session:
+        enrollments = session.exec(select(EnrollmentDB)).all()
+
+        for enroll in enrollments:
+            join = StudentEnrollment(
+                enrollment_id=enroll.id, student_id=enroll.student_id
+            )
+
+            session.add(join)
+            session.commit()
+            session.refresh(join)
+
+
+def main():
     create_fake_users()
     create_fake_courses()
+    create_fake_students()
+    create_fake_enrollments()
+    create_join_of_fake_data()
+
+
+if __name__ == "__main__":
+    main()

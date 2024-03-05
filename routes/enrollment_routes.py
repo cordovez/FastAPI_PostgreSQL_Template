@@ -1,6 +1,12 @@
 from fastapi import Depends, HTTPException, APIRouter, status, Query
 from db.database import engine
-from models import EnrollmentCreate, EnrollmentDB, EnrollmentRead, EnrollmentUpdate
+from models import (
+    EnrollmentCreate,
+    EnrollmentDB,
+    EnrollmentRead,
+    PersonRead,
+    EnrollmentUpdate,
+)
 from sqlmodel import select, Session
 from datetime import date
 from handlers.student_enrollment import enroll_student
@@ -24,6 +30,17 @@ async def get_all_enrollments(
     limit: int = Query(default=100, le=100),
 ):
     return session.exec(select(EnrollmentDB).offset(offset).limit(limit)).all()
+
+
+@enrollment_router.get("/{enrollment_id}", response_model=list[PersonRead])
+async def get_students_in_enrollment(
+    *,
+    enrollment_id: int,
+    session: Session = Depends(get_session),
+    offset: int = 0,
+    limit: int = Query(default=100, le=100),
+):
+    return session.get(EnrollmentDB, enrollment_id).students
 
 
 @enrollment_router.post(

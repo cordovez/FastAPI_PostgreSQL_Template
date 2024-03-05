@@ -1,6 +1,7 @@
 from fastapi import Depends, HTTPException, APIRouter, status, Query
 from db.database import engine
 from models import (
+    CourseRead,
     PersonCreate,
     PersonRead,
     PersonUpdate,
@@ -42,6 +43,7 @@ async def create_a_user(
     session: Session = Depends(get_session),
     new_person: PersonCreate,
 ):
+    # TO DO: add students to student db
     hashed_password = hash_password(new_person.password)
 
     extra_data = {
@@ -83,6 +85,23 @@ async def get_one_user(
 ):
     if person := session.get(PersonDB, person_id):
         return person
+    else:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+
+@user_router.get(
+    "/{student_id}/course",
+    description="Student's Course",
+    response_model=CourseRead,
+    status_code=status.HTTP_200_OK,
+)
+async def get_student_course(
+    *,
+    session: Session = Depends(get_session),
+    student_id: int,
+):
+    if student := session.get(PersonDB, student_id):
+        return student.course
     else:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 

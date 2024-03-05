@@ -6,6 +6,7 @@ from db.database import engine
 from routes.user_routes import user_router
 from routes.course_routes import course_router
 from routes.enrollment_routes import enrollment_router
+from routes.student_routes import student_router
 from sqlmodel import SQLModel
 
 
@@ -19,8 +20,9 @@ app = FastAPI(lifespan=lifespan)
 
 
 app.include_router(user_router, tags=["Users"], prefix="/users")
+app.include_router(student_router, tags=["Students"], prefix="/students")
 app.include_router(course_router, tags=["Courses"], prefix="/courses")
-app.include_router(enrollment_router, tags=["Enrollment"], prefix="/enrollment")
+app.include_router(enrollment_router, tags=["Enrollments"], prefix="/enrollments")
 
 
 def main():

@@ -36,6 +36,21 @@ class Levels(StrEnum):
     C2 = auto()
 
 
+""" 
+Link Table
+"""
+
+
+class StudentEnrollment(SQLModel, table=True):
+    enrollment_id: Optional[int] = Field(
+        default=None, foreign_key="enrollmentdb.id", primary_key=True
+    )
+
+    student_id: Optional[int] = Field(
+        default=None, foreign_key="studentdb.id", primary_key=True
+    )
+
+
 """
 Courses
 
@@ -44,7 +59,8 @@ Courses
 
 class EnrollmentBase(SQLModel):
     course_id: int = Field(foreign_key="coursedb.id")
-    student_id: int = Field(foreign_key="persondb.id")
+    course_name: str
+    student_id: int = Field(foreign_key="studentdb.id")
     instructor_id: int = Field(foreign_key="coursedb.id")
     start_level: Levels = Field(default=Levels.A1)
     start_date: Optional[date] = None
@@ -56,6 +72,10 @@ class EnrollmentBase(SQLModel):
 
 class EnrollmentDB(EnrollmentBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+
+    students: List["StudentDB"] = Relationship(
+        back_populates="enrollments", link_model=StudentEnrollment
+    )
 
 
 class EnrollmentCreate(EnrollmentBase):
@@ -86,10 +106,6 @@ class CourseBase(SQLModel):
 
 class CourseDB(CourseBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-
-    students: List["PersonDB"] = Relationship(
-        back_populates="course",
-    )
 
 
 class CourseRead(CourseBase):
@@ -123,15 +139,22 @@ class PersonBase(SQLModel):
     post_code: Optional[str] = Field(default=None)
     locality: Optional[str] = Field(default=None)
     country: Optional[str] = Field(default=None)
-    course_id: Optional[int] = Field(default=None, foreign_key="coursedb.id")
 
 
 class PersonDB(PersonBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     password_hashed: Optional[str] = Field(default=None)
+
     role: str = Field(default=Role.STUDENT)
 
-    course: Optional[CourseDB] = Relationship(back_populates="students")
+
+class StudentDB(PersonBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    role: str = Field(default=Role.STUDENT)
+
+    enrollments: List[EnrollmentDB] = Relationship(
+        back_populates="students", link_model=StudentEnrollment
+    )
 
 
 class PersonRead(PersonBase):
